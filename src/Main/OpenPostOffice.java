@@ -1,0 +1,59 @@
+package Main;
+
+import PostOffice.PostOffice;
+import Parcels.Letter;
+
+import java.util.Scanner;
+
+/**
+ * A class that instantiates a PostOffice, asking the user what it wants to do.
+ */
+public class OpenPostOffice {
+    private static String[] actions = new String[]{"send a letter"};
+    private static PostOffice postOffice = new PostOffice();;
+
+    /**
+     * The main method that opens the PostOffice and asks what to do.
+     * @param args
+     */
+    public static void main(String[] args) {
+        ask();
+    }
+
+    private static void ask() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("what do you want to do?");
+        for(String s : actions) System.out.println(s.charAt(0) + " - " + s);
+        char action = Character.toLowerCase(sc.next().charAt(0));
+        switch(action) {
+            case 's':   writeLetter();
+                        break;
+            case 'q':   System.exit(0);
+        }
+    }
+
+    private static void writeLetter() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("whats your name?");
+        String name = sc.nextLine();
+        System.out.println("who is the recipient (ip:port)?");
+        String recipient = sc.nextLine();
+        System.out.println("what is the title?");
+        String title = sc.nextLine();
+        System.out.println("what is the message?");
+        String message = sc.nextLine();
+        Letter letter = new Letter(name, recipient, title, message);
+        System.out.println("preview of the message:\n" + letter.toString());
+        System.out.println("do you want to send?");
+        char ans = sc.next().charAt(0);
+        switch(ans) {
+            case 'y':
+                postOffice.sendParcel(letter);
+                System.out.println("letter sent");
+                break;
+            default:
+                System.out.println("letter discarded");
+                break;
+        }
+    }
+}
