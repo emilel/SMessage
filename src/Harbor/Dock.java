@@ -1,4 +1,4 @@
-//TODO: ta emot paket, skicka vidare, få svar, kommandon
+//TODO: receive package, distribute or handle
 
 package Harbor;
 

@@ -1,4 +1,5 @@
 //TODO: return status to the controller
+//TODO: initialize on open: allowed ips, max number of docks, the server ip
 
 package Harbor;
 
@@ -7,6 +8,8 @@ import Utils.Utils;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -28,7 +31,8 @@ public class Harbor {
     public Harbor(int port, int maxNumberOfDocks, String ipWebsite) {
         this.port = port;
         this.maxNumberOfDocks = maxNumberOfDocks;
-        fetchIps(ipWebsite);
+        this.localSiteIp = Utils.getLocalSiteIp();
+        this.externalIp = Utils.getExternalIp(ipWebsite);
     }
 
     /**
@@ -63,10 +67,5 @@ public class Harbor {
         } catch(IOException e) {
             System.out.println("unable to start server");
         }
-    }
-
-    private void fetchIps(String ipWebsite) {
-        localSiteIp = Utils.getLocalSiteIp();
-        externalIp = Utils.getExternalIp(ipWebsite);
     }
 }
