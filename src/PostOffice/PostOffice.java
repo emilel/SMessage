@@ -73,6 +73,7 @@ public class PostOffice {
     private boolean send(Parcel parcel) {
         try {
             connections.get(parcel.getRecipient().split(":")[0]).writeObject(parcel);
+            System.out.println("letter sent");
             return true;
         } catch(IOException e) {
             System.out.println("unable to send package");

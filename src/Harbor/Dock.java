@@ -55,13 +55,10 @@ public class Dock extends Thread {
             }
         } catch(IOException e) {
             System.out.println("unable to put up objectinputstream");
-            System.out.println(e);
         } catch(ClassCastException e) {
             System.out.println("unable to cast incoming object to receivedparcel");
-            System.out.println(e);
         } catch(ClassNotFoundException e) {
             System.out.println("unknown object received");
-            System.out.println(e);
         }
     }
 

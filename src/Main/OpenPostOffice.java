@@ -49,7 +49,6 @@ public class OpenPostOffice {
         switch(ans) {
             case 'y':
                 postOffice.sendParcel(letter);
-                System.out.println("letter sent");
                 break;
             default:
                 System.out.println("letter discarded");
