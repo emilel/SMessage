@@ -5,9 +5,7 @@ package Harbor;
 
 import Utils.Utils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.*;
 
 
@@ -19,7 +17,7 @@ public class Harbor {
     private int port;
     private int maxNumberOfDocks;
     private String externalIp;
-    private String host;
+    private String localSiteIp;
 
     /**
      * Constructor for the Harbor.
@@ -48,11 +46,11 @@ public class Harbor {
     public void open() {
         try {
             serverSocket = new ServerSocket(port);
-            System.out.println("server " + " open on port " + port + "\nhost: " + host + "\nexternal ip: " + externalIp + "\n");
+            System.out.println("server open\nlocal address: " + localSiteIp + ":" + port + "\nexternal address: " + externalIp + ":" + port + "\n");
             while(true) {
                 if(Thread.activeCount() < maxNumberOfDocks) {
                     Socket dock = serverSocket.accept();
-                    (new Dock(dock, externalIp, host)).run();
+                    (new Dock(dock, externalIp, localSiteIp)).run();
                 } else {
                     try {
                         Thread.sleep(5000);
@@ -68,11 +66,7 @@ public class Harbor {
     }
 
     private void fetchIps(String ipWebsite) {
-        try {
-            host = InetAddress.getLocalHost().toString();
-            externalIp = Utils.fetchExternalIp(ipWebsite);
-        } catch(UnknownHostException e) {
-            System.out.println("unable to get local host");
-        }
+        localSiteIp = Utils.getLocalSiteIp();
+        externalIp = Utils.getExternalIp(ipWebsite);
     }
 }

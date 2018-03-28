@@ -16,18 +16,18 @@ import Parcels.Parcel.ReceivedParcel;
 public class Dock extends Thread {
     private Socket dock;
     private String externalIp;
-    private String internalIp;
+    private String localSiteIp;
 
     /**
      * The constructor which creates a new Dock (connection to a host).
      * @param dock the Socket to the host
      * @param externalIp the external ip of this server
-     * @param host the name of this server
+     * @param localSiteIp the local site ip of this server
      */
-    Dock(Socket dock, String externalIp, String host) {
+    Dock(Socket dock, String externalIp, String localSiteIp) {
         this.dock = dock;
         this.externalIp = externalIp;
-        this.internalIp = host.split("/")[1];
+        this.localSiteIp = localSiteIp;
     }
 
     /**
@@ -42,7 +42,7 @@ public class Dock extends Thread {
                 try {
                     ReceivedParcel receivedParcel= ((Parcel) conveyor.readObject()).receive();
                     System.out.println(receivedParcel);
-                    if(!(receivedParcel.getRecipient().split(":")[0].equals(externalIp) || receivedParcel.getRecipient().split(":")[0].equals(internalIp))) {
+                    if(!(receivedParcel.getRecipient().split(":")[0].equals(externalIp) || receivedParcel.getRecipient().split(":")[0].equals(localSiteIp))) {
                         distribute(receivedParcel);
                     } else {
                         handle(receivedParcel);
@@ -55,28 +55,38 @@ public class Dock extends Thread {
             }
         } catch(IOException e) {
             System.out.println("unable to put up objectinputstream");
+            System.out.println(e);
         } catch(ClassCastException e) {
             System.out.println("unable to cast incoming object to receivedparcel");
-            e.printStackTrace();
+            System.out.println(e);
         } catch(ClassNotFoundException e) {
             System.out.println("unknown object received");
+            System.out.println(e);
         }
     }
 
-    //TODO: distribute received parcel to other server
     /**
-     * Distributes a received Parcel if it was not intended for this server.
-     * @param receivedParcel the incoming Parcel
+     * Returns this machine's external ip.
+     * @return this machine's external ip.
      */
+    public String getExternalIp() {
+        return externalIp;
+    }
+
+    /**
+     * Returns this machine's local site ip.
+     * @return this machine's local site ip.
+     */
+    public String getLocalSiteIp() {
+        return localSiteIp;
+    }
+
+    //TODO: distribute received parcel to other server
     private void distribute(ReceivedParcel receivedParcel) {
 
     }
 
     //TODO: handle received parcel
-    /**
-     * Handles the parcel.
-     * @param receivedParcel the incoming Parcel
-     */
     private void handle(ReceivedParcel receivedParcel) {
 
     }
