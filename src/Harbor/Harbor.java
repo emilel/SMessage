@@ -9,8 +9,6 @@ import Utils.Utils;
 import java.io.*;
 import java.net.*;
 import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
 
 
 /**
@@ -23,7 +21,9 @@ public class Harbor extends Thread {
     private String externalIp;
     private String localSiteIp;
     private HashSet<String> allowedIps;
-    private Properties properties;
+    private Settings settings;
+    private boolean isRunning;
+    private boolean setUp;
 
     /**
      * Constructor for the Harbor.
@@ -31,36 +31,72 @@ public class Harbor extends Thread {
      */
     public Harbor() {
         this.localSiteIp = Utils.getLocalSiteIp();
-        this.properties = new Properties();
+        this.externalIp = Utils.getExternalIp();
         allowedIps = new HashSet<>();
-        initialize();
+        settings = new Settings(".settings");
+        try {
+            settings.loadSettings();
+            port = settings.getPort();
+            maxNumberOfConnections = settings.getMaxNumberOfConnections();
+            allowedIps = settings.getAllowedIps();
+            setUp = true;
+        } catch (FileNotFoundException e) {
+            setUp = false;
+        }
+    }
+
+    public void setUp(int port, int maxNumberOfConnections, HashSet<String> allowedIps) {
+        this.port = port;
+        this.maxNumberOfConnections = maxNumberOfConnections;
+        this.allowedIps = allowedIps;
+        setUp = true;
+    }
+
+    public void saveSettings() {
+        settings.setSettings(port, maxNumberOfConnections, allowedIps);
+        settings.saveSettings();
+    }
+
+    public boolean isRunning() {
+        return isRunning;
     }
 
     /**
      * Opens the Harbor, allows connections and creates Docks on separate threads that handle new incoming connections.
      */
-    public boolean open() {
+    public void run() {
         try {
             serverSocket = new ServerSocket(port);
-            System.out.println("server open\nlocal address: " + localSiteIp + ":" + port + "\nexternal address: " + externalIp + ":" + port + "\nallowed ips: " + allowedIps);
-            while(true) {
-                if(Thread.activeCount() < maxNumberOfConnections) {
+            System.out.println("server open\nlocal address: " + localSiteIp + ":" + port + "\nexternal address: " + externalIp + ":" + port + "\nmaximum number of connections: " + maxNumberOfConnections + "\nallowed ips: " + allowedIps);
+            isRunning = true;
+            while (true) {
+                if (Thread.activeCount() < maxNumberOfConnections) {
                     Socket dock = serverSocket.accept();
-                    if(allowedIps.contains(dock.getInetAddress().toString().substring(1)))
+                    if (allowedIps.contains(dock.getInetAddress().toString().substring(1)))
                         (new Dock(dock, externalIp, localSiteIp)).run();
                     else
                         dock.close();
                 } else {
                     try {
                         Thread.sleep(5000);
-                    } catch(InterruptedException e) {
-
-                    }
+                    } catch (InterruptedException e) { }
                 }
             }
-
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("unable to start server");
+        }
+    }
+
+    public boolean isSetUp() {
+        return setUp;
+    }
+
+    public boolean close() {
+        try {
+            serverSocket.close();
+            return true;
+        } catch (IOException e) {
+            System.out.println("unable to close server");
             return false;
         }
     }
@@ -69,107 +105,7 @@ public class Harbor extends Thread {
         allowedIps.add(ip);
     }
 
-    public void saveSettings() {
-        properties = new Properties();
-        properties.setProperty("port", String.valueOf(port));
-        properties.setProperty("maxNumberOfConnections", String.valueOf(maxNumberOfConnections));
-        FileOutputStream fileOutputStream = null;
-        try {
-            fileOutputStream = new FileOutputStream("config.properties");
-            properties.store(fileOutputStream, null);
-            fileOutputStream = new FileOutputStream("allowedips.txt");
-            //saveAllowedIps();
-        } catch (IOException e) {
-            System.out.println("unable to save settings");
-        } finally {
-            try {
-                fileOutputStream.close();
-            } catch (IOException e) {
-                System.out.println("unable to close fileoutputstream");
-            } catch (NullPointerException e) {
-                System.out.println("fileoutputstream was null");
-            }
-        }
-    }
-
-    private void saveAllowedIps() {
-        FileOutputStream fileOutputStream = null;
-        try {
-            fileOutputStream = new FileOutputStream("allowedips.txt");
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-            objectOutputStream.writeObject(allowedIps);
-            objectOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                fileOutputStream.close();
-            } catch (NullPointerException e) {
-                System.out.println("fileoutputstream was null");
-            } catch (IOException e) {
-                System.out.println("unable to close file");
-            }
-        }
-    }
-
-    private void initialize() {
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream("config.properties");
-            properties.load(fileInputStream);
-            readProperties(properties);
-        } catch (IOException e) {
-
-            saveSettings();
-        } finally {
-            try {
-                fileInputStream.close();
-            } catch (IOException e) {
-                System.out.println("unable to close fileinputstream");
-            } catch (NullPointerException e) {
-                //properties.config is now created
-            }
-        }
-    }
-
-    private void readProperties(Properties properties) {
-        try {
-            maxNumberOfConnections = Integer.parseInt(properties.getProperty("maxNumberOfConnections"));
-            if(maxNumberOfConnections == 0) maxNumberOfConnections = 3;
-        } catch (NumberFormatException e) {
-            System.out.println("could not read maxnumberofconnections in config.properties, default value of 3 set");
-            maxNumberOfConnections = 3;
-        }
-        try {
-            port = Integer.parseInt(properties.getProperty("port"));
-            if(port == 0) port = 6135;
-        } catch (NumberFormatException e) {
-            System.out.println("unable to read port in config.properties, default value of 6135 set");
-            port = 6135;
-        }
-        try {
-            externalIp = Utils.getExternalIp("http://bot.whatismyipaddress.com/");
-        } catch (NumberFormatException e) {
-            System.out.println("port in config.properties of wrong type");
-        }
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream("allowedips.txt");
-            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-            allowedIps = (HashSet<String>) objectInputStream.readObject();
-        } catch (IOException e) {
-            saveAllowedIps();
-        } catch (ClassNotFoundException e) {
-            System.out.println("something wrong with allowedips.txt");
-        } finally {
-            try {
-                fileInputStream.close();
-            } catch (IOException e) {
-                System.out.println("unable to close fileinputstream");
-            } catch (NullPointerException e) {
-                System.out.println("allowedips fileinputstream was null on close");
-            }
-        }
-
+    public void removeAllowedIp(String ip) {
+        allowedIps.remove(ip);
     }
 }

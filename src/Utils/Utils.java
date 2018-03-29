@@ -12,12 +12,11 @@ import java.util.Enumeration;
 public class Utils {
     /**
      * Returns the external ip of this machine.
-     * @param ipWebsite which ip to fetch the ip from
      * @return the external ip
      */
-    public static String getExternalIp(String ipWebsite) {
+    public static String getExternalIp() {
         try {
-            URL ipCheckingWebsite = new URL(ipWebsite);
+            URL ipCheckingWebsite = new URL("http://bot.whatismyipaddress.com/");
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(ipCheckingWebsite.openStream()));
             return bufferedReader.readLine().trim();
         } catch(MalformedURLException e) {
