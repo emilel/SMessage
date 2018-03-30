@@ -17,21 +17,5 @@ public class Letter extends Parcel {
         type = "Letter";
     }
 
-    /**
-     * Returns this letter as a String.
-     * @return this letter as a String
-     */
-    @Override
-    public String getParcelType() {
-        return type;
-    }
-
-    /**
-     * Returns this Letter as a String.
-     * @return this Letter as a String.
-     */
-    @Override
-    public String toString() {
-        return getParcelType().toLowerCase() + "\n" + super.toString();
-    }
+    Letter() { }
 }

@@ -5,24 +5,27 @@ package Parcels;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * An abstract superclass that represents all the packages sent and received by the program.
  * @param <E> the type of the content
  */
 public abstract class Parcel<E> implements Serializable {
+    private static final List<Parcel> parcelTypes = Arrays.asList(new Letter(), new Command());
     private String sender;
     private String server;
     private String recipient;
     private String title;
-    private E content;
+    E content;
     private LocalDateTime timeSent;
-    protected String type;
-    protected LocalDateTime timeReceived;
-    protected String source;
-    protected String distributor;
+    String type;
+    LocalDateTime timeReceived;
+    String source;
+    String distributor;
 
-    private Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
+    Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
         this.sender = sender;
         this.server = server;
         this.recipient = recipient;
@@ -31,8 +34,14 @@ public abstract class Parcel<E> implements Serializable {
         this.timeSent = timeSent;
     }
 
+    Parcel() { }
+
     Parcel(String sender, String server, String recipient, String title, E content) {
         this(sender, server, recipient, title, content, LocalDateTime.now());
+    }
+
+    public static List<Parcel> getParcelTypes() {
+        return parcelTypes;
     }
 
     public String getServer() {
@@ -72,7 +81,7 @@ public abstract class Parcel<E> implements Serializable {
      * @return this parcel as a String.
      */
     public String toString() {
-        return "sender: " + sender + "\nrecipient: " + recipient + "\n\ncontent (" + getContentType().toLowerCase() + "):\n" + content.toString();
+        return "type: " + getParcelType() + "\nsender: " + sender + "\nrecipient: " + recipient + "\n\ncontent (" + getContentType().toLowerCase() + "):\n" + content.toString();
     }
 
     /**
