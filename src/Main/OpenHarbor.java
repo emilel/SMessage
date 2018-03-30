@@ -10,7 +10,11 @@ import java.util.Scanner;
  */
 public class OpenHarbor {
     static Harbor harbor;
-    
+
+    /**
+     * Opens the harbor and checks if it is set up. If it is, a set up is run, otherwise the harbor opens.
+     * @param args
+     */
     public static void main(String[] args) {
         harbor = new Harbor();
         if(!harbor.isSetUp()) {
@@ -19,7 +23,10 @@ public class OpenHarbor {
         }
         harbor.run();
     }
-    
+
+    /**
+     * Sets up the Harbor.
+     */
     public static void setUp() {
         Scanner sc = new Scanner(System.in);
         System.out.println("harbor is not setup.");
