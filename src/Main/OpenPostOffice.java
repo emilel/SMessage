@@ -36,19 +36,27 @@ public class OpenPostOffice {
         Scanner sc = new Scanner(System.in);
         System.out.println("whats your name?");
         String name = sc.nextLine();
+        System.out.println("what is the server (ip:port)?");
+        String server = sc.nextLine();
         System.out.println("who is the recipient (ip:port)?");
         String recipient = sc.nextLine();
         System.out.println("what is the title?");
         String title = sc.nextLine();
         System.out.println("what is the message?");
         String message = sc.nextLine();
-        Letter letter = new Letter(name, recipient, title, message);
+        Letter letter = new Letter(name, server, recipient, title, message);
         System.out.println("preview of the message:\n" + letter.toString());
         System.out.println("do you want to send?");
         char ans = sc.next().charAt(0);
         switch(ans) {
             case 'y':
-                postOffice.sendParcel(letter);
+                int response = postOffice.sendParcels(letter);
+                if(response == 0)
+                    System.out.println("letter sent");
+                else if(response > 0)
+                    System.out.println("connection was refused by the server");
+                else
+                    System.out.println("unable to send letter");
                 break;
             default:
                 System.out.println("letter discarded");

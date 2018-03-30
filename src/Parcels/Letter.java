@@ -4,8 +4,6 @@ package Parcels;
  * A class that adds the field "message" to a Parcel.
  */
 public class Letter extends Parcel {
-    private String content;
-    private String type;
 
     /**
      * Constructor which creates a Letter.
@@ -14,8 +12,8 @@ public class Letter extends Parcel {
      * @param title the title of the Letter
      * @param message the message
      */
-    public Letter(String sender, String recipient, String title, String message) {
-        super(sender, recipient, title, message);
+    public Letter(String sender, String server, String recipient, String title, String message) {
+        super(sender, server, recipient, title, message);
         type = "Letter";
     }
 

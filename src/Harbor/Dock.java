@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 import Parcels.Parcel.ReceivedParcel;
+import Parcels.Parcel.DistributedParcel;
+import PostOffice.PostOffice;
 
 /**
  * The class representing a connection to a PostOffice, able to receive packages and run independently as a Thread.
@@ -17,6 +19,7 @@ public class Dock extends Thread {
     private Socket dock;
     private String externalIp;
     private String localSiteIp;
+    private PostOffice postOffice;
 
     /**
      * The constructor which creates a new Dock (connection to a host).
@@ -24,10 +27,11 @@ public class Dock extends Thread {
      * @param externalIp the external ip of this server
      * @param localSiteIp the local site ip of this server
      */
-    Dock(Socket dock, String externalIp, String localSiteIp) {
+    Dock(Socket dock, String externalIp, String localSiteIp, PostOffice postOffice) {
         this.dock = dock;
         this.externalIp = externalIp;
         this.localSiteIp = localSiteIp;
+        this.postOffice = postOffice;
     }
 
     /**
@@ -38,26 +42,22 @@ public class Dock extends Thread {
         try {
             System.out.println("connected to " + dock.getInetAddress() + " on port " + dock.getPort() + "\n");
             ObjectInputStream conveyor = new ObjectInputStream(dock.getInputStream());
-            while(true) {
+            while (true) {
                 try {
-                    ReceivedParcel receivedParcel= ((Parcel) conveyor.readObject()).receive();
-                    System.out.println(receivedParcel);
-                    if(!(receivedParcel.getRecipient().split(":")[0].equals(externalIp) || receivedParcel.getRecipient().split(":")[0].equals(localSiteIp))) {
-                        distribute(receivedParcel);
-                    } else {
-                        handle(receivedParcel);
-                    }
-                } catch(EOFException e) {
+                    Parcel parcel = (Parcel) conveyor.readObject();
+                    System.out.println("parcel received");
+                    handleIncoming(parcel);
+                } catch (EOFException e) {
                     dock.close();
                     System.out.println("\nconnection " + " to " + dock.getInetAddress() + " on port " + dock.getPort() + " ended\n");
                     break;
                 }
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("unable to put up objectinputstream");
-        } catch(ClassCastException e) {
-            System.out.println("unable to cast incoming object to receivedparcel");
-        } catch(ClassNotFoundException e) {
+        } catch (ClassCastException e) {
+            System.out.println("unable to cast incoming object to parcel");
+        } catch (ClassNotFoundException e) {
             System.out.println("unknown object received");
         }
     }
@@ -78,13 +78,22 @@ public class Dock extends Thread {
         return localSiteIp;
     }
 
-    //TODO: distribute received parcel to other server
-    private void distribute(ReceivedParcel receivedParcel) {
-
+    private void distribute(DistributedParcel distributedParcel) {
+        postOffice.sendParcels(distributedParcel.distribute(externalIp));
     }
 
-    //TODO: handle received parcel
-    private void handle(ReceivedParcel receivedParcel) {
+    private void handleIncoming(Parcel parcel) {
+        String recipient = parcel.getRecipient().split(":")[0];
+        if (recipient.equals(localSiteIp) || recipient.equals(externalIp)) {
+            handleServerParcel(parcel.receive(dock.getInetAddress().toString()));
+        } else {
+            distribute(parcel.distribute(externalIp));
+            System.out.println("parcel sent for distribution");
+        }
+    }
 
+    //TODO: handleServerParcel parcel intended for server
+    private void handleServerParcel(ReceivedParcel receivedParcel) {
+        System.out.println(receivedParcel);
     }
 }

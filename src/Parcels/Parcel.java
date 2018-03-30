@@ -12,22 +12,32 @@ import java.time.LocalDateTime;
  */
 public abstract class Parcel<E> implements Serializable {
     private String sender;
+    private String server;
     private String recipient;
     private String title;
     private E content;
     private LocalDateTime timeSent;
-    private String type;
+    protected String type;
 
-    private Parcel(String sender, String recipient, String title, E content, LocalDateTime timeSent) {
+    private Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
         this.sender = sender;
+        this.server = server;
         this.recipient = recipient;
         this.title = title;
         this.content = content;
         this.timeSent = timeSent;
     }
 
-    Parcel(String sender, String recipient, String title, E content) {
-        this(sender, recipient, title, content, LocalDateTime.now());
+    Parcel(String sender, String server, String recipient, String title, E content) {
+        this(sender, server, recipient, title, content, LocalDateTime.now());
+    }
+
+    public String getServer() {
+        return server;
+    }
+
+    public String getTarget() {
+        return server;
     }
 
     /**
@@ -90,8 +100,12 @@ public abstract class Parcel<E> implements Serializable {
      * Returns a ReceivedParcel which adds the time the Parcel was received by the server.
      * @return a ReceivedParcel which adds the time the Parcel was received by the server
      */
-    public ReceivedParcel receive() {
-        return new ReceivedParcel(this);
+    public ReceivedParcel receive(String source) {
+        return new ReceivedParcel(source);
+    }
+
+    public DistributedParcel distribute(String distributor) {
+        return new DistributedParcel(distributor);
     }
 
     /**
@@ -99,10 +113,16 @@ public abstract class Parcel<E> implements Serializable {
      */
     public class ReceivedParcel extends Parcel {
         private LocalDateTime timeReceived;
+        private String source;
 
-        private ReceivedParcel(Parcel parcel) {
-            super(sender, recipient, title, content, timeSent);
+        private ReceivedParcel(String source) {
+            super(sender, server, recipient, title, content, timeSent);
             this.timeReceived = LocalDateTime.now();
+            this.source = source;
+        }
+
+        public String getSource() {
+            return source;
         }
 
         /**
@@ -111,6 +131,24 @@ public abstract class Parcel<E> implements Serializable {
          */
         public LocalDateTime getTimeReceived() {
             return timeReceived;
+        }
+    }
+
+    public class DistributedParcel extends Parcel {
+        private String distributor;
+
+        private DistributedParcel(String distributor) {
+            super(sender, server, recipient, title, content, timeSent);
+            this.distributor = distributor;
+        }
+
+        public String getDistributor() {
+            return distributor;
+        }
+
+        @Override
+        public String getTarget() {
+            return recipient;
         }
     }
 }

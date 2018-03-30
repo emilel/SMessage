@@ -4,6 +4,7 @@
 package Harbor;
 
 
+import PostOffice.PostOffice;
 import Utils.Utils;
 
 import java.io.*;
@@ -24,6 +25,7 @@ public class Harbor extends Thread {
     private Settings settings;
     private boolean isRunning;
     private boolean setUp;
+    private PostOffice postOffice;
 
     /**
      * Constructor for the Harbor. Loads settings and sets the field setUp to true, or sets it to false if unable to load settings.
@@ -32,8 +34,9 @@ public class Harbor extends Thread {
     public Harbor() {
         this.localSiteIp = Utils.getLocalSiteIp();
         this.externalIp = Utils.getExternalIp();
-        allowedIps = new HashSet<>();
-        settings = new Settings(".settings");
+        this.allowedIps = new HashSet<>();
+        this.settings = new Settings(".settings");
+        this.postOffice = new PostOffice();
         try {
             settings.loadSettings();
             port = settings.getPort();
@@ -86,7 +89,7 @@ public class Harbor extends Thread {
                 if (Thread.activeCount() < maxNumberOfConnections) {
                     Socket dock = serverSocket.accept();
                     if (allowedIps.contains(dock.getInetAddress().toString().substring(1)))
-                        (new Dock(dock, externalIp, localSiteIp)).run();
+                        (new Dock(dock, externalIp, localSiteIp, postOffice)).run();
                     else
                         dock.close();
                 } else {

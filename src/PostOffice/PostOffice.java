@@ -22,11 +22,12 @@ public class PostOffice {
      * @param parcels the parcels to send
      * @return 0 if all the parcels were successfully sent, otherwise the number of the (first) parcel that failed.
      *          If it failed connecting, the number is positive. If it failed sending, the number is negative.
+     *          Index starts at one.
      */
-    public int sendParcel(Parcel... parcels) {
+    public int sendParcels(Parcel... parcels) {
         for(int i = 0; i < parcels.length; i++) {
-            if(!connect(parcels[i].getRecipient())) return i;
-            if(!send(parcels[i])) return - i;
+            if(!connect(parcels[i].getTarget())) return i + 1;
+            if(!send(parcels[i])) return - i - 1;
         }
         return 0;
     }
