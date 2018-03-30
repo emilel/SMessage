@@ -4,11 +4,15 @@
 package Harbor;
 
 
+import Parcels.Parcel;
 import PostOffice.PostOffice;
+import Storage.ParcelList;
 import Utils.Utils;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 
@@ -24,27 +28,36 @@ public class Harbor extends Thread {
     private HashSet<String> allowedIps;
     private Settings settings;
     private boolean isRunning;
-    private boolean setUp;
+    private boolean isSetUp;
     private PostOffice postOffice;
+    private ParcelList parcelList;
 
     /**
-     * Constructor for the Harbor. Loads settings and sets the field setUp to true, or sets it to false if unable to load settings.
+     * Constructor for the Harbor. Loads settings and sets the field isSetUp to true, or sets it to false if unable to load settings.
      *
      */
     public Harbor() {
         this.localSiteIp = Utils.getLocalSiteIp();
         this.externalIp = Utils.getExternalIp();
         this.allowedIps = new HashSet<>();
-        this.settings = new Settings(".settings");
         this.postOffice = new PostOffice();
+
+        this.settings = new Settings(".settings");
         try {
             settings.loadSettings();
             port = settings.getPort();
             maxNumberOfConnections = settings.getMaxNumberOfConnections();
             allowedIps = settings.getAllowedIps();
-            setUp = true;
+            isSetUp = true;
         } catch (FileNotFoundException e) {
-            setUp = false;
+            isSetUp = false;
+        }
+
+        this.parcelList = new ParcelList(".parcels");
+        try {
+            parcelList.loadParcels();
+        } catch (FileNotFoundException e) {
+            //no earlier parcels found in storage
         }
     }
 
@@ -58,7 +71,7 @@ public class Harbor extends Thread {
         this.port = port;
         this.maxNumberOfConnections = maxNumberOfConnections;
         this.allowedIps = allowedIps;
-        setUp = true;
+        isSetUp = true;
     }
 
     /**
@@ -89,7 +102,7 @@ public class Harbor extends Thread {
                 if (Thread.activeCount() < maxNumberOfConnections) {
                     Socket dock = serverSocket.accept();
                     if (allowedIps.contains(dock.getInetAddress().toString().substring(1)))
-                        (new Dock(dock, externalIp, localSiteIp, postOffice)).run();
+                        (new Dock(dock, externalIp, localSiteIp, postOffice, parcelList)).run();
                     else
                         dock.close();
                 } else {
@@ -108,7 +121,7 @@ public class Harbor extends Thread {
      * @return if the harbor is set up and ready to open
      */
     public boolean isSetUp() {
-        return setUp;
+        return isSetUp;
     }
 
     /**
@@ -140,5 +153,13 @@ public class Harbor extends Thread {
      */
     public boolean removeAllowedIp(String ip) {
         return allowedIps.remove(ip);
+    }
+
+    /**
+     * Returns all parcels stored.
+     * @return all parcels stored
+     */
+    public HashMap<String, ArrayList<Parcel>> getParcels() {
+        return parcelList.getParcels();
     }
 }

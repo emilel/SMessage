@@ -58,7 +58,7 @@ class Settings implements Serializable {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
             objectOutputStream.writeObject(this);
         } catch (IOException e) {
-            System.out.println(e.toString());
+            System.out.println("unable to save settings");
             return false;
         }
         return true;

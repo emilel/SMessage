@@ -11,6 +11,7 @@ import java.net.Socket;
 import Parcels.Parcel.ReceivedParcel;
 import Parcels.Parcel.DistributedParcel;
 import PostOffice.PostOffice;
+import Storage.ParcelList;
 
 /**
  * The class representing a connection to a PostOffice, able to receive packages and run independently as a Thread.
@@ -20,6 +21,7 @@ public class Dock extends Thread {
     private String externalIp;
     private String localSiteIp;
     private PostOffice postOffice;
+    private ParcelList parcelList;
 
     /**
      * The constructor which creates a new Dock (connection to a host).
@@ -27,11 +29,12 @@ public class Dock extends Thread {
      * @param externalIp the external ip of this server
      * @param localSiteIp the local site ip of this server
      */
-    Dock(Socket dock, String externalIp, String localSiteIp, PostOffice postOffice) {
+    Dock(Socket dock, String externalIp, String localSiteIp, PostOffice postOffice, ParcelList parcelList) {
         this.dock = dock;
         this.externalIp = externalIp;
         this.localSiteIp = localSiteIp;
         this.postOffice = postOffice;
+        this.parcelList = parcelList;
     }
 
     /**
@@ -44,9 +47,11 @@ public class Dock extends Thread {
             ObjectInputStream conveyor = new ObjectInputStream(dock.getInputStream());
             while (true) {
                 try {
-                    Parcel parcel = (Parcel) conveyor.readObject();
-                    System.out.println("parcel received");
-                    handleIncoming(parcel);
+                    while (true) {
+                        Parcel parcel = (Parcel) conveyor.readObject();
+                        System.out.println("parcel received");
+                        handleIncoming(parcel);
+                    }
                 } catch (EOFException e) {
                     dock.close();
                     System.out.println("\nconnection " + " to " + dock.getInetAddress() + " on port " + dock.getPort() + " ended\n");
@@ -94,6 +99,7 @@ public class Dock extends Thread {
 
     //TODO: handleServerParcel parcel intended for server
     private void handleServerParcel(ReceivedParcel receivedParcel) {
+        parcelList.addParcel(receivedParcel);
         System.out.println(receivedParcel);
     }
 }

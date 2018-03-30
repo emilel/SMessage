@@ -18,6 +18,9 @@ public abstract class Parcel<E> implements Serializable {
     private E content;
     private LocalDateTime timeSent;
     protected String type;
+    protected LocalDateTime timeReceived;
+    protected String source;
+    protected String distributor;
 
     private Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
         this.sender = sender;
@@ -104,46 +107,55 @@ public abstract class Parcel<E> implements Serializable {
         return new ReceivedParcel(source);
     }
 
+    /**
+     * Returns a DistributedParcel with the distributor added
+     * @param distributor the server that distributed the package
+     * @return a DistributedParcel with the distributor added
+     */
     public DistributedParcel distribute(String distributor) {
         return new DistributedParcel(distributor);
+    }
+
+    /**
+     * Returns the distributor of the package.
+     * @return the distributor of the package
+     */
+    public String getDistributor() {
+        return distributor;
+    }
+
+    /**
+     * Returns the source of the package.
+     * @return the source of the package
+     */
+    public String getSource() {
+        return source;
+    }
+
+    /**
+     * Returns the time the Parcel was received.
+     * @return the time the Parcel was received
+     */
+    public LocalDateTime getTimeReceived() {
+        return timeReceived;
     }
 
     /**
      * The class the server transforms an incoming package to upon receiving to include the time it was received.
      */
     public class ReceivedParcel extends Parcel {
-        private LocalDateTime timeReceived;
-        private String source;
 
         private ReceivedParcel(String source) {
             super(sender, server, recipient, title, content, timeSent);
             this.timeReceived = LocalDateTime.now();
             this.source = source;
         }
-
-        public String getSource() {
-            return source;
-        }
-
-        /**
-         * Returns the time the Parcel was received.
-         * @return the time the Parcel was received
-         */
-        public LocalDateTime getTimeReceived() {
-            return timeReceived;
-        }
     }
 
     public class DistributedParcel extends Parcel {
-        private String distributor;
-
         private DistributedParcel(String distributor) {
             super(sender, server, recipient, title, content, timeSent);
             this.distributor = distributor;
-        }
-
-        public String getDistributor() {
-            return distributor;
         }
 
         @Override
