@@ -13,13 +13,14 @@ import java.util.List;
  * @param <E> the type of the content
  */
 public abstract class Parcel<E> implements Serializable {
-    private static final List<Parcel> parcelTypes = Arrays.asList(new Letter(), new Command());
+    public static final List<Parcel> parcelTypes = Arrays.asList(new Letter(), new Command());
     private String sender;
     private String server;
     private String recipient;
     private String title;
-    E content;
     private LocalDateTime timeSent;
+    private String target;
+    E content;
     String type;
     LocalDateTime timeReceived;
     String source;
@@ -28,6 +29,7 @@ public abstract class Parcel<E> implements Serializable {
     Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
         this.sender = sender;
         this.server = server;
+        this.target = server;
         this.recipient = recipient;
         this.title = title;
         this.content = content;
@@ -40,16 +42,12 @@ public abstract class Parcel<E> implements Serializable {
         this(sender, server, recipient, title, content, LocalDateTime.now());
     }
 
-    public static List<Parcel> getParcelTypes() {
-        return parcelTypes;
-    }
-
     public String getServer() {
         return server;
     }
 
     public String getTarget() {
-        return server;
+        return target;
     }
 
     /**
@@ -65,7 +63,7 @@ public abstract class Parcel<E> implements Serializable {
      * @return the type of the Parcel.
      */
     public String getParcelType() {
-        return this.getClass().toString();
+        return this.getClass().getSimpleName();
     }
 
     /**
@@ -81,7 +79,7 @@ public abstract class Parcel<E> implements Serializable {
      * @return this parcel as a String.
      */
     public String toString() {
-        return "type: " + getParcelType() + "\nsender: " + sender + "\nrecipient: " + recipient + "\n\ncontent (" + getContentType().toLowerCase() + "):\n" + content.toString();
+        return "type: " + getParcelType().toLowerCase() + "\nsender: " + sender + "\nrecipient: " + recipient + "\nserver: " + server + "\ntitle: " + title + "\ncontent (" + getContentType().toLowerCase() + "): " + content.toString();
     }
 
     /**
@@ -112,8 +110,10 @@ public abstract class Parcel<E> implements Serializable {
      * Returns a ReceivedParcel which adds the time the Parcel was received by the server.
      * @return a ReceivedParcel which adds the time the Parcel was received by the server
      */
-    public ReceivedParcel receive(String source) {
-        return new ReceivedParcel(source);
+    public Parcel receive(String source) {
+        this.timeReceived = LocalDateTime.now();
+        this.source = source;
+        return this;
     }
 
     /**
@@ -121,8 +121,10 @@ public abstract class Parcel<E> implements Serializable {
      * @param distributor the server that distributed the package
      * @return a DistributedParcel with the distributor added
      */
-    public DistributedParcel distribute(String distributor) {
-        return new DistributedParcel(distributor);
+    public Parcel distribute(String distributor) {
+        this.distributor = distributor;
+        this.target = recipient;
+        return this;
     }
 
     /**
@@ -147,29 +149,5 @@ public abstract class Parcel<E> implements Serializable {
      */
     public LocalDateTime getTimeReceived() {
         return timeReceived;
-    }
-
-    /**
-     * The class the server transforms an incoming package to upon receiving to include the time it was received.
-     */
-    public class ReceivedParcel extends Parcel {
-
-        private ReceivedParcel(String source) {
-            super(sender, server, recipient, title, content, timeSent);
-            this.timeReceived = LocalDateTime.now();
-            this.source = source;
-        }
-    }
-
-    public class DistributedParcel extends Parcel {
-        private DistributedParcel(String distributor) {
-            super(sender, server, recipient, title, content, timeSent);
-            this.distributor = distributor;
-        }
-
-        @Override
-        public String getTarget() {
-            return recipient;
-        }
     }
 }

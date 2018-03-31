@@ -2,23 +2,22 @@ package Main;
 
 import Parcels.Command;
 import Parcels.Parcel;
-import PostOffice.PostOffice;
+import Sender.Sender;
 import Parcels.Letter;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
 
 /**
- * A class that instantiates a PostOffice, asking the user what it wants to do.
+ * A class that instantiates a Sender, asking the user what it wants to do.
  */
-public class OpenPostOffice {
+public class SimplePostOffice {
     private static String[] actions = new String[]{"send a letter"};
-    private static PostOffice postOffice = new PostOffice();
+    private static Sender postOffice = new Sender();
     private static HashSet<Parcel> parcelTypes = new HashSet<>();
 
     /**
-     * The main method that opens the PostOffice and asks what to do.
+     * The main method that opens the Sender and asks what to do.
      * @param args
      */
     public static void main(String[] args) {
@@ -28,20 +27,20 @@ public class OpenPostOffice {
     private static void askAndSend() {
         Scanner sc = new Scanner(System.in);
         System.out.println("what do you want to do?");
-        for(Parcel p : Parcel.getParcelTypes()) System.out.println(p.getParcelType().charAt(0) + " - send " + p.getParcelType());
-        System.out.println("q - quit");
+        for(Parcel p : Parcel.parcelTypes) System.out.println(Character.toLowerCase(p.getParcelType().charAt(0)) + " - send " + p.getParcelType().toLowerCase());
+        System.out.println("q - quit\n");
         char type = Character.toLowerCase(sc.nextLine().charAt(0));
-        System.out.println("whats your name?");
+        System.out.println("\nwhats your name?");
         String sender = sc.nextLine();
-        System.out.println("what is the server (ip:port)?");
+        System.out.println("\nwhat is the server (ip:port)?");
         String server = sc.nextLine();
-        System.out.println("who is the recipient (ip:port)?");
+        System.out.println("\nwho is the recipient (ip:port)?");
         String recipient = sc.nextLine();
-        System.out.println("what is the title?");
+        System.out.println("\nwhat is the title?");
         String title = sc.nextLine();
-        System.out.println("what is the content?");
+        System.out.println("\nwhat is the content?");
         String content = sc.nextLine();
-        Parcel parcel;
+        Parcel parcel = null;
         switch(type) {
             case 'l':
                 parcel = new Letter(sender, server, recipient, title, content);
@@ -52,22 +51,21 @@ public class OpenPostOffice {
             case 'q':
                 System.exit(0);
         }
-        Letter letter = new Letter(sender, server, recipient, title, content);
-        System.out.println("preview of the parcel:\n" + letter.toString());
-        System.out.println("do you want to send?");
+        System.out.println("\n" + parcel.toString());
+        System.out.println("\ndo you want to send?");
         char ans = sc.next().charAt(0);
         switch(ans) {
             case 'y':
-                int response = postOffice.sendParcels(letter);
+                int response = postOffice.sendParcels(parcel);
                 if(response == 0)
-                    System.out.println("letter sent");
+                    System.out.println(parcel.getParcelType().toLowerCase() + " sent");
                 else if(response > 0)
                     System.out.println("connection was refused by the server");
                 else
-                    System.out.println("unable to send letter");
+                    System.out.println("unable to send " + parcel.getParcelType().toLowerCase());
                 break;
             default:
-                System.out.println("letter discarded");
+                System.out.println(parcel.getParcelType().toLowerCase() + " discarded");
                 break;
         }
     }

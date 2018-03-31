@@ -1,7 +1,11 @@
-package Harbor;
+package Receiver;
+
+import Person.Person;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -9,9 +13,10 @@ import java.util.Set;
  */
 class Settings implements Serializable {
     private int port;
-    private int maxNumberOfConnections;
-    private HashSet<String> allowedIps;
+    private HashSet<Person> allowedPeople;
     private String settingsFile;
+    private HashSet<Person> admins;
+    private HashMap<Integer, String> commands;
 
     /**
      * Constructor for the class, saves the name of the settings file.
@@ -30,8 +35,9 @@ class Settings implements Serializable {
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             Settings settings = (Settings) objectInputStream.readObject();
             this.port = settings.getPort();
-            this.allowedIps = settings.getAllowedIps();
-            this.maxNumberOfConnections = settings.getMaxNumberOfConnections();
+            this.allowedPeople = settings.getAllowedPeople();
+            this.admins = settings.getAdmins();
+            this.commands = settings.getCommands();
         } catch (IOException | ClassNotFoundException e) {
             throw new FileNotFoundException();
         }
@@ -39,45 +45,35 @@ class Settings implements Serializable {
 
     /**
      * Saves the settings to disk.
-     * @param port port for the Harbor to operate at
-     * @param maxNumberOfConnections the maximum number of simultaneous connections
-     * @param allowedIps the set of ips which are allowed to connect
+     * @param port port for the Receiver to operate at
+     * @param admins the set of ips which are allowed to connect
      */
-    void setSettings(int port, int maxNumberOfConnections, Set<String> allowedIps) {
+    void setSettings(int port, Set<Person> admins, Set<Person> allowedPeople, Map<Integer, String> commands) {
         this.port = port;
-        this.maxNumberOfConnections = maxNumberOfConnections;
-        this.allowedIps = new HashSet<>(allowedIps);
+        this.admins = new HashSet<Person>(admins);
+        this.allowedPeople = new HashSet<Person>(allowedPeople);
+        this.commands = new HashMap<>(commands);
     }
 
     /**
      * Saves the settings to disk.
-     * @return if the settings were successfully saved
      */
-    boolean saveSettings() {
+    void saveSettings() {
         try (FileOutputStream fileOutputStream = new FileOutputStream(settingsFile)) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
             objectOutputStream.writeObject(this);
+            System.out.println("settings saved to disk");
         } catch (IOException e) {
             System.out.println("unable to save settings");
-            return false;
         }
-        return true;
     }
 
     /**
      * Returns a set of all the allowed ips.
      * @return a set of all the allowed ips.
      */
-    HashSet<String> getAllowedIps() {
-        return allowedIps;
-    }
-
-    /**
-     * Returns the maximum number of simultaneous connections.
-     * @return the maximum number of simultaneous connections
-     */
-    int getMaxNumberOfConnections() {
-        return maxNumberOfConnections;
+    HashSet<Person> getAllowedPeople() {
+        return allowedPeople;
     }
 
     /**
@@ -86,5 +82,13 @@ class Settings implements Serializable {
      */
     int getPort() {
         return port;
+    }
+
+    HashSet<Person> getAdmins() {
+        return admins;
+    }
+
+    HashMap<Integer, String> getCommands() {
+        return commands;
     }
 }

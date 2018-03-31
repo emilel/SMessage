@@ -1,4 +1,4 @@
-package PostOffice;
+package Sender;
 
 import Parcels.*;
 
@@ -7,13 +7,13 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.*;
 
-public class PostOffice {
+public class Sender {
     private Map<String, ObjectOutputStream> connections;
 
     /**
-     * Creates an instance of a PostOffice.
+     * Creates an instance of a Sender.
      */
-    public PostOffice() {
+    public Sender() {
         connections = new HashMap<>();
     }
 
@@ -25,15 +25,15 @@ public class PostOffice {
      *          Index starts at one.
      */
     public int sendParcels(Parcel... parcels) {
-        for(int i = 0; i < parcels.length; i++) {
-            if(!connect(parcels[i].getTarget())) return i + 1;
-            if(!send(parcels[i])) return - i - 1;
+        for (int i = 0; i < parcels.length; i++) {
+            if (!connect(parcels[i].getTarget())) return i + 1;
+            if (!send(parcels[i])) return - i - 1;
         }
         return 0;
     }
 
     /**
-     * Tries to connect the PostOffice to the server, prints the error to the console if it failed.
+     * Tries to connect the Sender to the server, prints the error to the console if it failed.
      * @param server the server to connect to (ip address and port separated by a comma, ip:port)
      * @return true if the connection was successfully made, otherwise false
      */
@@ -43,13 +43,11 @@ public class PostOffice {
             connections.putIfAbsent(ipAndPort[0], new ObjectOutputStream((new Socket(ipAndPort[0], Integer.parseInt(ipAndPort[1]))).getOutputStream()));
             System.out.println("connected to server");
             return true;
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("unable to connect to server");
-            System.out.println(e);
             return false;
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             System.out.println("not a valid port");
-            System.out.println(e);
             return false;
         }
     }
@@ -64,8 +62,11 @@ public class PostOffice {
                 try {
                     connections.get(s).close();
                     connections.remove(s);
-                } catch(IOException e) {
+                    System.out.println("closed connection to " + s);
+                } catch (IOException e) {
                     System.out.println("unable to disconnect from server");
+                } catch (NullPointerException e) {
+                    System.out.println("no such server");
                 }
             }
         return true;
@@ -74,10 +75,10 @@ public class PostOffice {
     private boolean send(Parcel parcel) {
         try {
             connections.get(parcel.getRecipient().split(":")[0]).writeObject(parcel);
-            System.out.println("letter sent");
             return true;
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("unable to send package");
+            System.out.println(e.toString());
             return false;
         }
     }

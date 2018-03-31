@@ -30,3 +30,6 @@ hs_err_pid*
 
 #Parcels in storage
 .parcels
+
+#Commands in storage
+.commands

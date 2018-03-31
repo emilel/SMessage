@@ -1,6 +1,4 @@
-package Storage;
-
-import Parcels.Parcel;
+package Parcels;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -9,7 +7,7 @@ import java.util.HashMap;
 /**
  * A class containing all the saved parcels.
  */
-public class ParcelList implements Serializable {
+public class Archive implements Serializable {
     private HashMap<String, ArrayList<Parcel>> parcels;
     private String parcelsFile;
 
@@ -17,8 +15,9 @@ public class ParcelList implements Serializable {
      * Constructor for the class.
      * @param parcelsFile the path to the file
      */
-    public ParcelList(String parcelsFile) {
+    public Archive(String parcelsFile) {
         this.parcelsFile = parcelsFile;
+        this.parcels = new HashMap<>();
     }
 
     /**
@@ -28,7 +27,7 @@ public class ParcelList implements Serializable {
     public void loadParcels() throws FileNotFoundException {
         try (FileInputStream fileInputStream = new FileInputStream(parcelsFile)) {
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-            ParcelList parcelList= (ParcelList) objectInputStream.readObject();
+            Archive parcelList= (Archive) objectInputStream.readObject();
             this.parcels = parcelList.getParcels();
         } catch (IOException | ClassNotFoundException e) {
             throw new FileNotFoundException();
@@ -51,8 +50,9 @@ public class ParcelList implements Serializable {
         try (FileOutputStream fileOutputStream = new FileOutputStream(parcelsFile)) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
             objectOutputStream.writeObject(this);
+            System.out.println("saved archive to disk");
         } catch (IOException e) {
-            System.out.println("unable to save parcellist");
+            System.out.println("unable to save archive");
             return false;
         }
         return true;
@@ -70,5 +70,6 @@ public class ParcelList implements Serializable {
             parcelsFromSender.add(parcel);
             parcels.put(parcel.getSender(), parcelsFromSender);
         }
+         System.out.println("added parcel to archive in memory");
      }
 }

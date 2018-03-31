@@ -1,40 +1,41 @@
-//TODO: receive package, distribute or handle
+package Receiver;
 
-package Harbor;
-
+import Parcels.Command;
 import Parcels.Parcel;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
-import Parcels.Parcel.ReceivedParcel;
-import Parcels.Parcel.DistributedParcel;
-import PostOffice.PostOffice;
-import Storage.ParcelList;
+import java.util.Map;
+
+import Sender.Sender;
+import Parcels.Archive;
 
 /**
- * The class representing a connection to a PostOffice, able to receive packages and run independently as a Thread.
+ * The class representing a connection to a Sender, able to receive packages and open independently as a Thread.
  */
-public class Dock extends Thread {
+public class Handler extends Thread {
     private Socket dock;
     private String externalIp;
     private String localSiteIp;
-    private PostOffice postOffice;
-    private ParcelList parcelList;
+    private Sender postOffice;
+    private Archive archive;
+    private Map<Integer, String> commands;
 
     /**
-     * The constructor which creates a new Dock (connection to a host).
+     * The constructor which creates a new Handler (connection to a host).
      * @param dock the Socket to the host
      * @param externalIp the external ip of this server
      * @param localSiteIp the local site ip of this server
      */
-    Dock(Socket dock, String externalIp, String localSiteIp, PostOffice postOffice, ParcelList parcelList) {
+    Handler(Socket dock, String externalIp, String localSiteIp, Sender postOffice, Archive parcelList, Map<Integer, String> commands) {
         this.dock = dock;
         this.externalIp = externalIp;
         this.localSiteIp = localSiteIp;
         this.postOffice = postOffice;
-        this.parcelList = parcelList;
+        this.archive = parcelList;
+        this.commands = commands;
     }
 
     /**
@@ -62,6 +63,7 @@ public class Dock extends Thread {
             System.out.println("unable to put up objectinputstream");
         } catch (ClassCastException e) {
             System.out.println("unable to cast incoming object to parcel");
+            System.out.println(e.toString());
         } catch (ClassNotFoundException e) {
             System.out.println("unknown object received");
         }
@@ -83,8 +85,8 @@ public class Dock extends Thread {
         return localSiteIp;
     }
 
-    private void distribute(DistributedParcel distributedParcel) {
-        postOffice.sendParcels(distributedParcel.distribute(externalIp));
+    private void distribute(Parcel parcel) {
+        postOffice.sendParcels(parcel.distribute(externalIp));
     }
 
     private void handleIncoming(Parcel parcel) {
@@ -96,10 +98,23 @@ public class Dock extends Thread {
             System.out.println("parcel sent for distribution");
         }
     }
+    
+    private void handleServerParcel(Parcel parcel) {
+        System.out.println(parcel + "\n");
+        archive.addParcel(parcel);
+        archive.saveParcelList();
+        if(parcel instanceof Command) {
+            handleCommand((Command) parcel);
+        }
+    }
 
-    //TODO: handleServerParcel parcel intended for server
-    private void handleServerParcel(ReceivedParcel receivedParcel) {
-        parcelList.addParcel(receivedParcel);
-        System.out.println(receivedParcel);
+    private void handleCommand(Command command) {
+        try {
+            Runtime.getRuntime().exec(commands.get(command.getContent()));
+        } catch (SecurityException e) {
+            System.out.println("command not allowed");
+        } catch (IOException e) {
+            System.out.println("an io exception occured");
+        }
     }
 }
