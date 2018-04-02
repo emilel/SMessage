@@ -4,9 +4,10 @@
 package Receiver;
 
 
-import Parcels.Parcel;
+import Shipments.Parcels.Parcel;
 import Sender.Sender;
-import Parcels.Archive;
+import Shipments.Parcels.Archive;
+import Shipments.Response;
 import Utils.Utils;
 import Person.Person;
 
@@ -16,7 +17,7 @@ import java.util.*;
 
 
 /**
- * The server class able to receive and (in the future) distribute and handle packages from the internet.
+ * The server class able to receive and distribute and handle packages from the internet.
  */
 public class Harbor extends Thread {
     public final static int DEFAULT_PORT = 6135;
@@ -30,9 +31,10 @@ public class Harbor extends Thread {
     private Settings settings;
     private boolean isRunning;
     private boolean isSetUp;
-    private Sender postOffice;
+    private Sender sender;
     private Archive archive;
     private Map<Integer, String> commands;
+    private HashMap<String, ArrayList<Parcel>> newParcels;
 
     /**
      * Constructor for the Receiver. Loads settings and sets the field isSetUp to true, or sets it to false if unable to load settings.
@@ -41,10 +43,11 @@ public class Harbor extends Thread {
     public Harbor() {
         this.localSiteIp = Utils.getLocalSiteIp();
         this.externalIp = Utils.getExternalIp();
-        this.postOffice = new Sender();
+        this.sender = new Sender();
         this.settings = new Settings(".settings");
         this.commands = new HashMap<>();
         this.admins = new HashSet<Person>();
+        this.newParcels = new HashMap<>();
         try {
             settings.loadSettings();
             port = settings.getPort();
@@ -58,7 +61,7 @@ public class Harbor extends Thread {
             isSetUp = false;
         }
 
-        this.archive = new Archive(".parcels");
+        this.archive = new Archive(".archive");
         try {
             archive.loadParcels();
         } catch (FileNotFoundException e) {
@@ -103,15 +106,20 @@ public class Harbor extends Thread {
     @Override
     public void run() {
         try {
-
+            if(externalIp == null) {
+                System.out.println("not connected, harbor not opened");
+                return;
+            }
             serverSocket = new ServerSocket(port);
             isRunning = true;
+            System.out.println(getInformation());
             while (true) {
                 Socket dock = serverSocket.accept();
                 System.out.println("\nnew request");
-                if (allowedPeople.contains(new Person(null, dock.getInetAddress().toString().substring(1), false))) {
+                if (admins.contains(new Person(null, dock.getInetAddress().toString().substring(1), false))
+                        || allowedPeople.contains(new Person(null, dock.getInetAddress().toString().substring(1), false))) {
                     System.out.println("request accepted");
-                    (new Handler(dock, externalIp, localSiteIp, postOffice, archive, commands)).run();
+                    (new Handler(dock, this)).start();
                 }
                 else {
                     dock.close();
@@ -123,10 +131,41 @@ public class Harbor extends Thread {
         }
     }
 
+    public void sendParcel(Parcel parcel) {
+        sender.sendParcel(parcel);
+    }
+
+    public String getExternalIp() {
+        return externalIp;
+    }
+
+    public String getLocalSiteIp() {
+        return localSiteIp;
+    }
+
+    public void store(Parcel parcel) {
+        if(newParcels.containsKey(parcel.getSource()))
+            newParcels.get(parcel.getSource()).add(parcel);
+        else {
+            ArrayList<Parcel> parcelsFromSender = new ArrayList<>();
+            parcelsFromSender.add(parcel);
+            newParcels.put(parcel.getSource(), parcelsFromSender);
+        }
+        archive.addParcel(parcel);
+    }
+
+    public void clearNewShipments() {
+        newParcels.clear();
+    }
+
+    public void saveArchive() {
+        archive.saveArchive();
+    }
+
     public String getInformation() {
         StringBuilder sb = new StringBuilder();
-        if(isRunning) sb.append("server open\n");
-        sb.append("local address: " + localSiteIp + ":" + port + "\nexternal address: " + externalIp + ":" + port + "\nadmins: " + admins + "\nallowed people: " + allowedPeople);
+        if(isRunning) sb.append("harbor open\n");
+        sb.append("local address: " + localSiteIp + ":" + serverSocket.getLocalPort() + "\nexternal address: " + externalIp + ":" + serverSocket.getLocalPort() + "\nadmins: " + admins + "\nallowed people: " + allowedPeople);
         return sb.toString();
     }
 
@@ -172,6 +211,18 @@ public class Harbor extends Thread {
         String message = "port set to " + port;
         if(isRunning) message += ", server restart required";
         System.out.println(message);
+    }
+
+    public HashMap<String, ArrayList<Parcel>> getNewParcels() {
+        return newParcels;
+    }
+
+    public void sendResponse(Response response, Socket dock) {
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(dock.getOutputStream())) {
+            objectOutputStream.writeObject(response);
+        } catch (IOException e) {
+            System.out.println("unable to send response");
+        }
     }
 
     /**

@@ -28,8 +28,5 @@ hs_err_pid*
 #Personal settings file
 .settings
 
-#Parcels in storage
-.parcels
-
-#Commands in storage
-.commands
+#Shipments in storage
+.archive

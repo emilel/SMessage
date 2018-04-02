@@ -1,4 +1,4 @@
-package Parcels;
+package Shipments.Parcels;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class Archive implements Serializable {
      * Saves all the parcels to disk.
      * @return if the save was successful
      */
-    public boolean saveParcelList() {
+    public boolean saveArchive() {
         try (FileOutputStream fileOutputStream = new FileOutputStream(parcelsFile)) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
             objectOutputStream.writeObject(this);
@@ -63,12 +63,12 @@ public class Archive implements Serializable {
      * @param parcel the parcel to add
      */
      public void addParcel(Parcel parcel) {
-        if(parcels.containsKey(parcel.getSender()))
-            parcels.get(parcel.getSender()).add(parcel);
+        if(parcels.containsKey(parcel.getSource()))
+            parcels.get(parcel.getSource()).add(parcel);
         else {
             ArrayList<Parcel> parcelsFromSender = new ArrayList<>();
             parcelsFromSender.add(parcel);
-            parcels.put(parcel.getSender(), parcelsFromSender);
+            parcels.put(parcel.getSource(), parcelsFromSender);
         }
          System.out.println("added parcel to archive in memory");
      }

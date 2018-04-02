@@ -1,4 +1,4 @@
-package Parcels;
+package Shipments.Parcels;
 
 /**
  * A class that adds the field "message" to a Parcel.
@@ -14,7 +14,6 @@ public class Letter extends Parcel {
      */
     public Letter(String sender, String server, String recipient, String title, String message) {
         super(sender, server, recipient, title, message);
-        type = "Letter";
     }
 
     Letter() { }

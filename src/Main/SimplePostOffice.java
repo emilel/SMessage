@@ -1,20 +1,18 @@
 package Main;
 
-import Parcels.Command;
-import Parcels.Parcel;
+import Shipments.Parcels.Command;
+import Shipments.Parcels.Parcel;
 import Sender.Sender;
-import Parcels.Letter;
+import Shipments.Parcels.Letter;
+import Shipments.Response;
 
-import java.util.HashSet;
 import java.util.Scanner;
 
 /**
  * A class that instantiates a Sender, asking the user what it wants to do.
  */
 public class SimplePostOffice {
-    private static String[] actions = new String[]{"send a letter"};
     private static Sender postOffice = new Sender();
-    private static HashSet<Parcel> parcelTypes = new HashSet<>();
 
     /**
      * The main method that opens the Sender and asks what to do.
@@ -56,11 +54,11 @@ public class SimplePostOffice {
         char ans = sc.next().charAt(0);
         switch(ans) {
             case 'y':
-                int response = postOffice.sendParcels(parcel);
-                if(response == 0)
+                Response response = postOffice.sendParcel(parcel);
+                if(response == Response.SUCCESS)
                     System.out.println(parcel.getParcelType().toLowerCase() + " sent");
-                else if(response > 0)
-                    System.out.println("connection was refused by the server");
+                else if(response == Response.CONNECT_ERROR)
+                    System.out.println("unable to connect to server");
                 else
                     System.out.println("unable to send " + parcel.getParcelType().toLowerCase());
                 break;

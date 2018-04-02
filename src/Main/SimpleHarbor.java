@@ -45,8 +45,7 @@ public class SimpleHarbor {
                 Thread.sleep(100);
             } catch (InterruptedException e) { }
         }
-
-        viewInformation();
+        System.out.println("enter 'h' for help\n");
         while (true) {
             try {
                 askForAction();
@@ -98,7 +97,7 @@ public class SimpleHarbor {
     }
 
     private static void clearSettings() {
-        System.out.println("\ndo you want to clear people (p), admins (p), commands (c) or everything (e)?");
+        System.out.println("\ndo you want to clear people (p), admins (a), commands (c) or everything (e)?");
         switch (Character.toLowerCase(sc.nextLine().charAt(0))) {
             case 'p':
                 harbor.clearAllowedPeople();
@@ -137,7 +136,7 @@ public class SimpleHarbor {
     }
 
     private static void addCommands() {
-        System.out.println("\nenter the commands you wish to be able to execute followed by a colon and a number to represent it (command:number)");
+        System.out.println("\nenter the commands you wish to be able to execute followed by a colon and a number to represent it (command:number), enter 'q' when finished");
         HashSet<String[]> commands = new HashSet<>();
         while(true) {
             String[] ans = sc.nextLine().split(":");
@@ -145,11 +144,12 @@ public class SimpleHarbor {
                 break;
             } else if (ans.length != 2) {
                 System.out.println("wrong format of input");
-            }
-            try {
-                commands.add(ans);
-            } catch (NumberFormatException e) {
-                System.out.println("unable to parse integer");
+            } else {
+                try {
+                    commands.add(ans);
+                } catch (NumberFormatException e) {
+                    System.out.println("unable to parse integer");
+                }
             }
         }
         for (String s[] : commands) {

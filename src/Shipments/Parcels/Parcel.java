@@ -1,7 +1,7 @@
 //TODO: Command, File, Image
 //TODO: Add sender IP on receive
 
-package Parcels;
+package Shipments.Parcels;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -19,17 +19,16 @@ public abstract class Parcel<E> implements Serializable {
     private String recipient;
     private String title;
     private LocalDateTime timeSent;
+    private E content;
+    private LocalDateTime timeReceived;
+    private String source;
+    private String distributor;
     private String target;
-    E content;
-    String type;
-    LocalDateTime timeReceived;
-    String source;
-    String distributor;
 
-    Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
+    private Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
+        this.target = server;
         this.sender = sender;
         this.server = server;
-        this.target = server;
         this.recipient = recipient;
         this.title = title;
         this.content = content;
@@ -38,9 +37,11 @@ public abstract class Parcel<E> implements Serializable {
 
     Parcel() { }
 
-    Parcel(String sender, String server, String recipient, String title, E content) {
+    public Parcel(String sender, String server, String recipient, String title, E content) {
         this(sender, server, recipient, title, content, LocalDateTime.now());
     }
+
+
 
     public String getServer() {
         return server;
@@ -72,6 +73,10 @@ public abstract class Parcel<E> implements Serializable {
      */
     public E getContent() {
         return content;
+    }
+
+    public String getTitle() {
+        return title;
     }
 
     /**
