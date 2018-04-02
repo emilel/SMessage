@@ -9,15 +9,31 @@ import java.util.Map;
 import java.util.Scanner;
 
 /**
- * Instantiates a Receiver and opens it.
+ * Opens a Harbor and controls it via the command line. Among possible user actions are:
+ *      Quit (q)
+ *      Help (h)
+ *      Add a command for a client to execute (c)
+ *      Add a person allowed to connect to the Harbor (a)
+ *      Add an admin allowed to retrieve messages stored on the Harbor (d)
+ *      Run setup (r)
+ *      View commands admins are allowed to execute (v)
+ *      View server information (i)
+ *      Save settings to disk (s)
+ *      Clear any or all of the settings allowed people, admins and commands (u)
+ *
+ *      If any settings are changed, user has to save settings manually to have them saved to disk unless running the
+ *      setup.
  */
-public class SimpleHarbor {
+public class CHarbor {
     private static Harbor harbor;
     private static Map<Character, String> actions = new HashMap<>();
     private static Scanner sc = new Scanner(System.in);
 
     /**
-     * Opens the harbor and checks if it is set up. If it is, a set up is open, otherwise the harbor opens.
+     * Opens a Harbor and starts the program. Checks if it is setup and runs a setup wizard if it is not. Initializes
+     * the Harbor, and if it is successful the program starts and the user can choose what to do by entering characters
+     * and pressing enter. If the Harbor was not able to connect to a network, an attempt is made every five seconds
+     * and if it still isn't successful for a minute, the program exits.
      * @param args
      */
     public static void main(String[] args) {
@@ -35,27 +51,41 @@ public class SimpleHarbor {
 
         harbor = new Harbor();
         if(!harbor.isSetUp()) {
-            System.out.println("harbor needs to be setup before opening");
+            System.out.println("harbor needs to be setup before opening\n");
             setUp();
         }
-        harbor.start();
 
-        while(!harbor.isRunning()) {
+        int i = 0;
+        System.out.println("connecting...");
+        while(!harbor.initialize() && i < 60) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(5000);
             } catch (InterruptedException e) { }
+            i++;
         }
+
+        if(i == 10) {
+            System.out.println("harbor could not get a connection, exiting program");
+            System.exit(0);
+        }
+
+        harbor.start();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) { }
         System.out.println("enter 'h' for help\n");
+
         while (true) {
             try {
-                askForAction();
+                waitForAction();
             } catch (Exception e) {
                 System.out.println("illegal input: " + e.getClass().getSimpleName());
             }
         }
     }
 
-    public static void askForAction() {
+    //waits for the user to input a character representing an action
+    private static void waitForAction() {
         char action = Character.toLowerCase(sc.nextLine().charAt(0));
         switch (action) {
             case 'h':
@@ -96,8 +126,10 @@ public class SimpleHarbor {
         }
     }
 
+    //allows the user to clear any of the following settings - people who are allowed to connect, admins, commands or
+    //everything
     private static void clearSettings() {
-        System.out.println("\ndo you want to clear people (p), admins (a), commands (c) or everything (e)?");
+        System.out.println("do you want to clear people (p), admins (a), commands (c) or everything (e)?");
         switch (Character.toLowerCase(sc.nextLine().charAt(0))) {
             case 'p':
                 harbor.clearAllowedPeople();
@@ -119,31 +151,38 @@ public class SimpleHarbor {
         }
     }
 
+    //prints the server information
     private static void viewInformation() {
-        System.out.println("\n" + harbor.getInformation());
+        System.out.println(harbor.getInformation());
         System.out.println("enter 'h' for help");
     }
 
+    //prints all of the possible actions
     private static void help() {
-        System.out.println("\navailable options:");
-        for (Map.Entry<Character, String> a : actions.entrySet()) System.out.println(a.getKey() + " - " + a.getValue());
+        System.out.println("available options:");
+        for (Map.Entry<Character, String> a : actions.entrySet())
+            System.out.println(a.getKey() + " - " + a.getValue());
     }
 
+    //prints the commands an admin is allowed to execute
     private static void viewCommands() {
-        System.out.println("\nthe following commands are available:");
+        System.out.println("the following commands are available:");
         if(harbor.getCommands().isEmpty()) System.out.println("no available commands");
-        for (Map.Entry<Integer, String> c : harbor.getCommands().entrySet()) System.out.println(c.getKey() + " - " + c.getValue());
+        for (Map.Entry<Integer, String> c : harbor.getCommands().entrySet())
+            System.out.println(c.getKey() + " - " + c.getValue());
     }
 
+    //adds a command an admin is allowed to execute
     private static void addCommands() {
-        System.out.println("\nenter the commands you wish to be able to execute followed by a colon and a number to represent it (command:number), enter 'q' when finished");
+        System.out.println("enter the commands you wish to be able to execute followed by a colon and a number to" +
+                            "represent it (command:number), enter 'q' when finished");
         HashSet<String[]> commands = new HashSet<>();
         while(true) {
             String[] ans = sc.nextLine().split(":");
             if (Character.toLowerCase(ans[0].charAt(0)) == 'q') {
                 break;
             } else if (ans.length != 2) {
-                System.out.println("wrong format of input");
+                System.out.println("wrong format of input, try again");
             } else {
                 try {
                     commands.add(ans);
@@ -157,24 +196,27 @@ public class SimpleHarbor {
         }
     }
 
-    /**
-     * Sets up the Receiver.
-     */
+    //the setup wizard, where the user gets to add people who are allowed to connect, admins and commands
     private static void setUp() {
-        System.out.print("\n---setup---");
-        harbor.getAdmins().clear();
-        harbor.getAllowedPeople().clear();
+        harbor.clearAdmins();
+        harbor.clearAllowedPeople();
         harbor.clearCommands();
+        System.out.println("---setup---");
         setPort();
         addAdmins();
         addAllowedPeople();
         addCommands();
-        harbor.saveSettings();
+        saveSettings();
         System.out.println("---setup finished---\n");
     }
 
+    private static void saveSettings() {
+        harbor.saveSettings();
+    }
+
+    //adds people who are allowed to connect
     private static void addAllowedPeople() {
-        System.out.println("\nadd allowed people (name:ip) separated by new line, enter 'q' when finished");
+        System.out.println("add allowed people (name:ip) separated by new line, enter 'q' when finished");
         HashSet<Person> allowedPeople = new HashSet<>();
         while(true) {
             String[] ans = sc.nextLine().split(":");
@@ -188,8 +230,9 @@ public class SimpleHarbor {
         harbor.addAllowedPeople(allowedPeople);
     }
 
+    //sets the port for the harbor to use
     private static void setPort() {
-        System.out.println("\nwhich port do you want to use?");
+        System.out.println("which port do you want to use?");
         int port;
         try {
             port = Integer.parseInt(sc.nextLine());
@@ -200,8 +243,9 @@ public class SimpleHarbor {
         harbor.setPort(port);
     }
 
+    //adds an admin to the harbor
     private static void addAdmins() {
-        System.out.println("\nadd admins (name:ip) separated by new line, enter 'q' when finished");
+        System.out.println("add admins (name:ip) separated by new line, enter 'q' when finished");
         HashSet<Person> admins = new HashSet<Person>();
         while(true) {
             String[] ans = sc.nextLine().split(":");

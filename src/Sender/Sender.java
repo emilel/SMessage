@@ -2,19 +2,14 @@ package Sender;
 
 import Shipments.Parcels.Parcel;
 import Shipments.Response;
-import Shipments.Parcels.Container;
-import Shipments.Parcels.EmptyContainer;
-import Shipments.Request;
-import Shipments.RequestParcel;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class Sender {
-    private Socket socket;
-    private ObjectOutputStream objectOutputStream;
+    protected Socket socket;
+    protected ObjectOutputStream objectOutputStream;
 
     /**
      * Creates an instance of a Sender.
@@ -24,11 +19,9 @@ public class Sender {
     }
 
     /**
-     * Sends one shipment.
-     * @param parcel the shipment to send
-     * @return 0 if all the parcels were successfully sent, otherwise the number of the (first) shipment that failed.
-     *          If it failed connecting, the number is positive. If it failed sending, the number is negative.
-     *          Index starts at one.
+     * Sends a Parcel.
+     * @param parcel the Parcel to send
+     * @return a Response explaining what happened.
      */
     public Response sendParcel(Parcel parcel) {
         if (connect(parcel.getTarget()) != Response.SUCCESS) return Response.CONNECT_ERROR;
@@ -49,6 +42,7 @@ public class Sender {
                 socket = new Socket(ipAndPort[0], Integer.parseInt(ipAndPort[1]));
                 System.out.println("connected to server");
                 objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                System.out.println("created objectoutputstream");
             }
             return Response.SUCCESS;
         } catch (IOException e) {
@@ -61,22 +55,23 @@ public class Sender {
     }
 
     /**
-     * Disconnects the server from all the current connections.
+     * Disconnects the server from the current connection.
      */
     public Response disconnect() {
-                try {
-                    socket.close();
-                    System.out.println("closed socket to " + socket.getInetAddress().toString());
-                    return Response.SUCCESS;
-                } catch (IOException e) {
-                    System.out.println("unable to disconnect from server");
-                    return Response.DISCONNECT_ERROR;
-                } catch (NullPointerException e) {
-                    return Response.NOSUCHSERVER_ERROR;
-                }
+        try {
+            socket.close();
+            System.out.println("closed connection to " + socket.getInetAddress().toString().substring(1));
+            return Response.SUCCESS;
+        } catch (IOException e) {
+            System.out.println("unable to disconnect from server");
+            return Response.DISCONNECT_ERROR;
+        } catch (NullPointerException e) {
+            return Response.NOSUCHSERVER_ERROR;
+        }
     }
 
-    private Response send(Parcel parcel) {
+    //sends parcel (assumes the sender is already connected)
+    protected Response send(Parcel parcel) {
         try {
             objectOutputStream.writeObject(parcel);
             System.out.println("successfully sent parcel");
@@ -85,41 +80,6 @@ public class Sender {
             System.out.println("unable to send parcel");
             e.printStackTrace();
             return Response.SEND_ERROR;
-        }
-    }
-
-    private Response sendContainerRequest(RequestParcel requestParcel) {
-        if (connect(requestParcel.getTarget()) != Response.SUCCESS) return Response.CONNECT_ERROR;
-        if (send(requestParcel) != Response.SUCCESS) return Response.SEND_ERROR;
-        return Response.SUCCESS;
-    }
-
-    private Container getContainer() {
-        try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-            return (Container) objectInputStream.readObject();
-        } catch (IOException e) {
-            System.out.println("an io error occurred while trying to receive response from server");
-            return new EmptyContainer("error receiving response from server");
-        } catch (ClassNotFoundException e) {
-            System.out.println("received unknown response from server");
-            return new EmptyContainer("unknown response from server");
-        }
-    }
-
-    public Container downloadAll(String target) {
-        if (sendContainerRequest(new RequestParcel(target, "download all request", Request.DOWNLOAD_ALL)) == Response.SUCCESS) {
-            return getContainer();
-        } else {
-            return new EmptyContainer("error while sending");
-        }
-    }
-
-    public Container downloadNew(String target) {
-        if (sendContainerRequest(new RequestParcel(target, "download new request", Request.DOWNLOAD_NEW)) == Response.SUCCESS) {
-            return getContainer();
-        } else {
-            return new EmptyContainer("error while sending");
         }
     }
 }

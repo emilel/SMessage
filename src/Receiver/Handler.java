@@ -1,41 +1,42 @@
 package Receiver;
 
-import Shipments.*;
 import Person.Person;
 import Shipments.Parcels.Command;
 import Shipments.Parcels.Container;
 import Shipments.Parcels.EmptyContainer;
 import Shipments.Parcels.Parcel;
 import Shipments.Request;
-import Shipments.RequestParcel;
+import Shipments.Parcels.RequestParcel;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 
 /**
- * The class representing a connection to a Sender, able to receive packages and open independently as a Thread.
+ * The class a Harbor uses to handle connections to clients, and handles the incoming Parcels.
  */
 public class Handler extends Thread {
     private Socket socket;
     private Harbor harbor;
     private String connectorIp;
+
     /**
-     * The constructor which creates a new Handler (connection to a host).
-     * @param dock the Socket to the host
+     * Constructor for the Handler.
+     * @param socket the Socket connecting the Handler to the client
+     * @param harbor the Harbor this Handler belongs to
      */
-    Handler(Socket dock, Harbor harbor) {
-        this.socket = dock;
+    Handler(Socket socket, Harbor harbor) {
+        this.socket = socket;
         this.harbor = harbor;
-        this.connectorIp = socket.getInetAddress().toString().substring(1);
+        this.connectorIp = this.socket.getInetAddress().toString().substring(1);
     }
 
     /**
-     * Receives a package from the host and distributes.
+     * Receives Parcels from the client and handles them. This method can run on it's own thread, by calling the
+     * Handler's method start().
      */
     @Override
     public void run() {
-
         System.out.println("connected to " + connectorIp + " on port " + socket.getPort() + "\n");
 
         try (ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream())) {
@@ -59,37 +60,28 @@ public class Handler extends Thread {
         System.out.println("connection " + " to " + connectorIp + " on port " + socket.getPort() + " ended\n");
     }
 
-    /**
-     * Returns this machine's local site connectorIp.
-     * @return this machine's local site connectorIp.
-     */
-
+    //distributes a parcel not intended for this Harbor, and adds to the parcel the external IP address of this server
+    // that distributed it. Uses the Sender of this Handler's harbor to distribute the parcel.
     private void distribute(Parcel parcel) {
         harbor.sendParcel(parcel.distribute(harbor.getExternalIp()));
         System.out.println("shipment sent for distribution");
     }
 
+    //sends all the parcels that have not been previously retrieved to the client this Handler is connected to
     private void sendNew() {
-        if(harbor.getAdmins().contains(new Person(null, connectorIp, false))) {
-            sendContainer(new Container(harbor.getExternalIp(), connectorIp, "All new Parcels from Harbor", harbor.getNewParcels()));
-            harbor.clearNewShipments();
-            System.out.println("sent all parcels not previously retrieved to an admin");
-        } else {
-            sendContainer(new EmptyContainer("retrieval request denied"));
-            System.out.println("a request for all new parcels was made but was denied due to lack of admin status");
-        }
-    }
-//TODO: send through the already open socket god damn it
-    private void sendAll() {
-        if(harbor.getAdmins().contains(new Person(null, connectorIp, false))) {
-            sendContainer(new Container(harbor.getExternalIp(), connectorIp, "All Parcels stored on Harbor", harbor.getParcels()));
-            System.out.println("sent all stored parcels to an admin");
-        } else {
-            sendContainer(new EmptyContainer("retrieval request denied"));
-            System.out.println("a request for all parcels stored was made but was denied due to lack of admin status");
-        }
+        sendContainer(new Container(harbor.getExternalIp(), connectorIp, "All new Parcels from Harbor",
+                        harbor.getNewParcels()));
+        harbor.clearNewParcels();
+        System.out.println("sent all parcels not previously retrieved to an admin");
     }
 
+    //sends all parcels stored on this Harbor to the client this Handler is connected to
+    private void sendAll() {
+        sendContainer(new Container(harbor.getExternalIp(), connectorIp, "All Parcels stored on Harbor", harbor.getParcels()));
+        System.out.println("sent all stored parcels to an admin");
+    }
+
+    //sends a container containing parcels to the client this Handler is connected to
     private void sendContainer(Container container) {
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream())) {
             objectOutputStream.writeObject(container);
@@ -98,6 +90,7 @@ public class Handler extends Thread {
         }
     }
 
+    //handles incoming parcels and determines if they should be handled by this server or just distributed
     private void handle(Parcel parcel) {
         String recipientIp = parcel.getRecipient().split(":")[0];
         if (recipientIp.equals(harbor.getLocalSiteIp()) || recipientIp.equals(harbor.getExternalIp())) {
@@ -106,7 +99,9 @@ public class Handler extends Thread {
             distribute(parcel.distribute(harbor.getExternalIp()));
         }
     }
-    
+
+    //handles parcels intended for this server. prints them out, and sends them to the right method depending on what
+    //type of parcel it is
     private void handleServerParcel(Parcel parcel) {
         System.out.println(parcel + "\n");
         if(parcel instanceof Command) {
@@ -118,25 +113,25 @@ public class Handler extends Thread {
         harbor.saveArchive();
     }
 
+    //handles a parcel containing a request of some sort
     private void handleRequestParcel(RequestParcel requestParcel) {
-        switch ((Request) requestParcel.getContent()) {
-            case DOWNLOAD_ALL:
-                sendAll();
-                break;
-            case DOWNLOAD_NEW:
-                sendNew();
-                break;
-            case NEW_MESSAGES:
-                sendIfNewMessages();
-                break;
+        if(harbor.getAdmins().contains(new Person(null, connectorIp, false))) {
+            switch ((Request) requestParcel.getContent()) {
+                case DOWNLOAD_ALL:
+                    sendAll();
+                    break;
+                case DOWNLOAD_NEW:
+                    sendNew();
+                    break;
+            }
+        } else {
+            sendContainer(new EmptyContainer("retrieval request denied"));
+            System.out.println("a request to retrieve parcels stored was made but was denied due to lack of admin " +
+                                "status");
         }
     }
 
-    private void sendIfNewMessages() {
-        if(harbor.getNewParcels().isEmpty()) harbor.sendResponse(Response.NO_NEW_PARCELS, socket);
-        else harbor.sendResponse(Response.NEW_PARCELS, socket);
-    }
-
+    //handles parcels containing commands (executes them if the sender is an admin)
     private void handleCommand(Command command) {
         try {
             if(harbor.getAdmins().contains(new Person(null, connectorIp, false))) {

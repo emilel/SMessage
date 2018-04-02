@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * An abstract superclass that represents all the packages sent and received by the program.
+ * An abstract superclass that represents all the Parcels sent and received between programs.
  * @param <E> the type of the content
  */
 public abstract class Parcel<E> implements Serializable {
@@ -25,6 +25,7 @@ public abstract class Parcel<E> implements Serializable {
     private String distributor;
     private String target;
 
+    //constructor
     private Parcel(String sender, String server, String recipient, String title, E content, LocalDateTime timeSent) {
         this.target = server;
         this.sender = sender;
@@ -35,25 +36,41 @@ public abstract class Parcel<E> implements Serializable {
         this.timeSent = timeSent;
     }
 
+    //useful so a collection of different types of Parcels without content easily can be created
     Parcel() { }
 
+    /**
+     * Constructs a Parcel.
+     * @param sender the sender of this Parcel (name)
+     * @param server the server this Parcel passes through (needs to be in this format - ip:port)
+     * @param recipient the recipient of this Parcel (a Harbor or a Person, needs to be in this format - ip:port)
+     * @param title the title of the Parcel
+     * @param content the content that can be of any type
+     */
     public Parcel(String sender, String server, String recipient, String title, E content) {
         this(sender, server, recipient, title, content, LocalDateTime.now());
     }
 
-
-
+    /**
+     * Returns the server the Parcel was first sent to
+     * @return the server the Parcel was first sent to
+     */
     public String getServer() {
         return server;
     }
 
+    /**
+     * Returns where the Parcel is going to next.
+     * @return when the Parcel is created, the server is returned. When a Parcel is received and is going to another
+     * machine, it returns the recipient.
+     */
     public String getTarget() {
         return target;
     }
 
     /**
      * Returns the class of the content.
-     * @return the class of the content.
+     * @return the class of the content
      */
     public String getContentType() {
         return content.getClass().getSimpleName();
@@ -75,21 +92,25 @@ public abstract class Parcel<E> implements Serializable {
         return content;
     }
 
+    /**
+     * Returns the title of this Parcel.
+     * @return the title of this Parcel
+     */
     public String getTitle() {
         return title;
     }
 
     /**
-     * Returns this parcel as a String.
-     * @return this parcel as a String.
+     * Returns this parcel as a String (type, sender, recipient, title, content and content type).
+     * @return this parcel as a String
      */
     public String toString() {
-        return "type: " + getParcelType().toLowerCase() + "\nsender: " + sender + "\nrecipient: " + recipient + "\nserver: " + server + "\ntitle: " + title + "\ncontent (" + getContentType().toLowerCase() + "): " + content.toString();
+        return "type: " + getParcelType().toLowerCase() + "\nsender: " + sender + "\nrecipient: " + recipient + "\ntitle: " + title + "\ncontent (" + getContentType().toLowerCase() + "): " + content.toString();
     }
 
     /**
-     * Returns the name (which the sender wrote upon creation).
-     * @return the name (which the sender wrote upon creation)
+     * Returns the name of the sender.
+     * @return the name of the sender
      */
     public String getSender() {
         return sender;
@@ -122,9 +143,9 @@ public abstract class Parcel<E> implements Serializable {
     }
 
     /**
-     * Returns a DistributedParcel with the distributor added
-     * @param distributor the server that distributed the package
-     * @return a DistributedParcel with the distributor added
+     * Adds the information of who distributed the Parcel, and changes the target to the recipient.
+     * @param distributor the server that distributed this Parcel
+     * @return a reference to this Parcel
      */
     public Parcel distribute(String distributor) {
         this.distributor = distributor;
@@ -141,8 +162,8 @@ public abstract class Parcel<E> implements Serializable {
     }
 
     /**
-     * Returns the source of the package.
-     * @return the source of the package
+     * Returns the source of the package (IP address of the sender).
+     * @return the source of the package (IP address of the sender)
      */
     public String getSource() {
         return source;

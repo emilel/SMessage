@@ -23,7 +23,6 @@ public class Utils {
             System.out.println("could not parse website url to check ip");
             return null;
         } catch(IOException e) {
-            System.out.println("could not read ip address from website");
             return null;
         }
     }
@@ -45,8 +44,7 @@ public class Utils {
             }
         } catch(SocketException e) {
             System.out.println("unable to get local site ip");
-            System.out.println(e);
         }
-        return "unknownLocalSiteIp";
+        return null;
     }
 }

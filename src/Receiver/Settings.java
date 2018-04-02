@@ -9,7 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A class containing the necessary settings for a Harbor to operate.
+ * A class containing the necessary settings for a Harbor to operate (port, people allowed to connect, what file
+ * the settings are stored in, who the admins are and allowed commands).
  */
 class Settings implements Serializable {
     private int port;
@@ -44,9 +45,11 @@ class Settings implements Serializable {
     }
 
     /**
-     * Saves the settings to disk.
-     * @param port port for the Receiver to operate at
-     * @param admins the set of ips which are allowed to connect
+     * Sets the settings the Harbor uses in memory.
+     * @param port the port the Harbor should operate at
+     * @param admins the admins of this Harbor
+     * @param allowedPeople people who are allowed to connect
+     * @param commands the commands that can be executed on this Harbor
      */
     void setSettings(int port, Set<Person> admins, Set<Person> allowedPeople, Map<Integer, String> commands) {
         this.port = port;
@@ -69,10 +72,10 @@ class Settings implements Serializable {
     }
 
     /**
-     * Returns a set of all the allowed ips.
-     * @return a set of all the allowed ips.
+     * Returns the people allowed to connect to the Harbor.
+     * @return the people allowed to connect to the Harbor
      */
-    HashSet<Person> getAllowedPeople() {
+    public HashSet<Person> getAllowedPeople() {
         return allowedPeople;
     }
 
@@ -80,15 +83,23 @@ class Settings implements Serializable {
      * Returns the port.
      * @return the port
      */
-    int getPort() {
+    public int getPort() {
         return port;
     }
 
-    HashSet<Person> getAdmins() {
+    /**
+     * Returns the admins.
+     * @return the admins
+     */
+    public HashSet<Person> getAdmins() {
         return admins;
     }
 
-    HashMap<Integer, String> getCommands() {
+    /**
+     * Returns the commands.
+     * @return the commands.
+     */
+    public HashMap<Integer, String> getCommands() {
         return commands;
     }
 }

@@ -9,23 +9,25 @@ import Shipments.Response;
 import java.util.Scanner;
 
 /**
- * A class that instantiates a Sender, asking the user what it wants to do.
+ * A simple program allowing the user to send Parcels to a Harbor, mostly for testing purposes.
  */
-public class SimplePostOffice {
-    private static Sender postOffice = new Sender();
+public class CPost {
+    private static Sender sender = new Sender();
 
     /**
-     * The main method that opens the Sender and asks what to do.
-     * @param args
+     * Starts the program.
      */
     public static void main(String[] args) {
         askAndSend();
     }
 
+    //asks what the user wants to send
     private static void askAndSend() {
         Scanner sc = new Scanner(System.in);
         System.out.println("what do you want to do?");
-        for(Parcel p : Parcel.parcelTypes) System.out.println(Character.toLowerCase(p.getParcelType().charAt(0)) + " - send " + p.getParcelType().toLowerCase());
+        for(Parcel p : Parcel.parcelTypes)
+            System.out.println(Character.toLowerCase(p.getParcelType().charAt(0))
+                                + " - send " + p.getParcelType().toLowerCase());
         System.out.println("q - quit\n");
         char type = Character.toLowerCase(sc.nextLine().charAt(0));
         System.out.println("\nwhats your name?");
@@ -44,7 +46,7 @@ public class SimplePostOffice {
                 parcel = new Letter(sender, server, recipient, title, content);
                 break;
             case 'c':
-                parcel = new Command(sender, server, recipient, title, Integer.parseInt(content));
+                parcel = new Command(sender, server, Integer.parseInt(content));
                 break;
             case 'q':
                 System.exit(0);
@@ -54,7 +56,7 @@ public class SimplePostOffice {
         char ans = sc.next().charAt(0);
         switch(ans) {
             case 'y':
-                Response response = postOffice.sendParcel(parcel);
+                Response response = CPost.sender.sendParcel(parcel);
                 if(response == Response.SUCCESS)
                     System.out.println(parcel.getParcelType().toLowerCase() + " sent");
                 else if(response == Response.CONNECT_ERROR)

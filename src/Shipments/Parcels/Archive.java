@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * A class containing all the saved parcels.
+ * A class containing many Parcels, including methods to save and load itself from disk.
  */
 public class Archive implements Serializable {
     private HashMap<String, ArrayList<Parcel>> parcels;
