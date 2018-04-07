@@ -36,11 +36,8 @@ import java.util.*;
 public class Harbor extends Thread {
     public final static int DEFAULT_PORT = 6135;
     private ServerSocket serverSocket;
-    private int port;
     private String externalIp;
     private String localSiteIp;
-    private HashSet<Person> allowedPeople;
-    private HashSet<Person> admins;
     private Settings settings;
     private boolean isRunning;
     private boolean hasInternetConnection;
@@ -48,7 +45,6 @@ public class Harbor extends Thread {
     private boolean isSetUp;
     private Sender sender;
     private Archive archive;
-    private Map<Integer, String> commands;
     private HashMap<String, ArrayList<Parcel>> newParcels;
 
     /**
@@ -59,21 +55,13 @@ public class Harbor extends Thread {
     public Harbor() {
         this.sender = new Sender();
         this.settings = new Settings(".settings");
-        this.commands = new HashMap<>();
-        this.admins = new HashSet<Person>();
         this.newParcels = new HashMap<>();
         this.connected = false;
         this.hasInternetConnection = false;
         try {
             settings.loadSettings();
-            this.port = settings.getPort();
-            this.allowedPeople = settings.getAllowedPeople();
-            this.admins = settings.getAdmins();
-            this.commands = settings.getCommands();
             this.isSetUp = true;
         } catch (FileNotFoundException e) {
-            this.port = DEFAULT_PORT;
-            this.allowedPeople = new HashSet<>();
             this.isSetUp = false;
         }
 
@@ -93,9 +81,9 @@ public class Harbor extends Thread {
     public boolean initialize() {
         this.localSiteIp = Utils.getLocalSiteIp();
         this.externalIp = Utils.getExternalIp();
-        if(externalIp == null) {
+        if (externalIp == null) {
             hasInternetConnection = false;
-            if(localSiteIp == null) {
+            if (localSiteIp == null) {
                 connected = false;
             } else {
                 connected = true;
@@ -119,14 +107,14 @@ public class Harbor extends Thread {
                 System.out.println("not connected, harbor not opened");
                 return;
             }
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(settings.getPort());
             isRunning = true;
             System.out.println(getInformation());
             while (true) {
                 Socket dock = serverSocket.accept();
                 System.out.println("\nnew request");
-                if (admins.contains(new Person(null, dock.getInetAddress().toString().substring(1), false))
-                        || allowedPeople.contains(new Person(null,
+                if (settings.getAdmins().contains(new Person(null, dock.getInetAddress().toString().substring(1),
+                        false)) || settings.getAllowedPeople().contains(new Person(null,
                         dock.getInetAddress().toString().substring(1), false))) {
                     System.out.println("request accepted");
                     (new Handler(dock, this)).start();
@@ -146,13 +134,13 @@ public class Harbor extends Thread {
      * @param people the people allowed to connect
      */
     public void addAllowedPeople(Collection<Person> people) {
-        allowedPeople.addAll(people);
+        settings.getAllowedPeople().addAll(people);
         System.out.println("people updated");
     }
 
     /**
      * Returns if the Harbor has had an internet connection.
-     * @return
+     * @return if the Harbor has had an internet connection
      */
     public boolean hasInternetConnection() {
         return hasInternetConnection;
@@ -162,7 +150,6 @@ public class Harbor extends Thread {
      * Saves the Harbor's current settings to disk.
      */
     public void saveSettings() {
-        settings.setSettings(port, admins, allowedPeople, commands);
         settings.saveSettings();
     }
 
@@ -170,16 +157,16 @@ public class Harbor extends Thread {
      * Clears the admins, prints this out if there were any admins.
      */
     public void clearAdmins() {
-        if(!admins.isEmpty()) System.out.println("admins cleared");
-        admins.clear();
+        if(!settings.getAdmins().isEmpty()) System.out.println("admins cleared");
+        settings.getAdmins().clear();
     }
 
     /**
      * Clears the allowed people, prints this out if there were any allowed people.
      */
     public void clearAllowedPeople() {
-        if(!allowedPeople.isEmpty()) System.out.println("allowed people cleared");
-        allowedPeople.clear();
+        if (!settings.getAllowedPeople().isEmpty()) System.out.println("allowed people cleared");
+        settings.getAllowedPeople().clear();
     }
 
     /**
@@ -242,10 +229,10 @@ public class Harbor extends Thread {
      */
     public String getInformation() {
         StringBuilder sb = new StringBuilder();
-        if(isRunning) sb.append("harbor open\n");
+        if (isRunning) sb.append("harbor open\n");
         sb.append("local address: " + localSiteIp + ":" + serverSocket.getLocalPort() +
                     "\nexternal address: " + externalIp + ":" + serverSocket.getLocalPort() +
-                "\nadmins: " + admins + "\nallowed people: " + allowedPeople);
+                "\nadmins: " + settings.getAdmins() + "\nallowed people: " + settings.getAllowedPeople());
         return sb.toString();
     }
 
@@ -254,7 +241,7 @@ public class Harbor extends Thread {
      * @return all commands allowed to execute on this machine
      */
     public Map<Integer, String> getCommands() {
-        return commands;
+        return settings.getCommands();
     }
 
     /**
@@ -291,8 +278,8 @@ public class Harbor extends Thread {
      * Clears the commands allowed to execute on the machine, prints this out if there were any allowed commands.
      */
     public void clearCommands() {
-        if(!commands.isEmpty()) System.out.println("commands cleared");
-        commands.clear();
+        if(!settings.getCommands().isEmpty()) System.out.println("commands cleared");
+        settings.getCommands().clear();
     }
 
     /**
@@ -301,7 +288,7 @@ public class Harbor extends Thread {
      * @param number a number representing a command, and what is being sent in a Command for execution
      */
     public void addCommand(String command, int number) {
-        commands.put(number, command);
+        settings.getCommands().put(number, command);
         System.out.println("command added");
     }
 
@@ -311,7 +298,7 @@ public class Harbor extends Thread {
      */
     public void setPort(int port) {
         assert(port < 65535 && port > 1023);
-        this.port = port;
+        settings.setPort(port);
         String message = "port set to " + port;
         if(isRunning) message += ", server restart required";
         System.out.println(message);
@@ -331,7 +318,7 @@ public class Harbor extends Thread {
      * @return if the ip was in the list of allowed ips and was successfully removed.
      */
     public boolean removeAllowedPerson(Person person) {
-        return allowedPeople.remove(person);
+        return settings.getAllowedPeople().remove(person);
     }
 
     /**
@@ -347,7 +334,7 @@ public class Harbor extends Thread {
      * @return the port this Harbor operates on
      */
     public int getPort() {
-        return port;
+        return settings.getPort();
     }
 
     /**
@@ -355,7 +342,7 @@ public class Harbor extends Thread {
      * @return
      */
     public HashSet<Person> getAllowedPeople() {
-        return allowedPeople;
+        return settings.getAllowedPeople();
     }
 
     /**
@@ -363,7 +350,7 @@ public class Harbor extends Thread {
      * @param people the admins to add
      */
     public void addAdmins(Collection<Person> people) {
-        admins.addAll(people);
+        settings.getAdmins().addAll(people);
         System.out.println("admins updated");
     }
 
@@ -372,6 +359,6 @@ public class Harbor extends Thread {
      * @return this Harbor's admins
      */
     public HashSet<Person> getAdmins() {
-        return admins;
+        return settings.getAdmins();
     }
 }

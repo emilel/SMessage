@@ -5,8 +5,6 @@ import Person.Person;
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * A class containing the necessary settings for a Harbor to operate (port, people allowed to connect, what file
@@ -40,22 +38,13 @@ class Settings implements Serializable {
             this.admins = settings.getAdmins();
             this.commands = settings.getCommands();
         } catch (IOException | ClassNotFoundException e) {
+            this.port = Harbor.DEFAULT_PORT;
+            this.allowedPeople = new HashSet<Person>();
+            this.admins = new HashSet<Person>();
+            this.commands = new HashMap<Integer, String>();
+
             throw new FileNotFoundException();
         }
-    }
-
-    /**
-     * Sets the settings the Harbor uses in memory.
-     * @param port the port the Harbor should operate at
-     * @param admins the admins of this Harbor
-     * @param allowedPeople people who are allowed to connect
-     * @param commands the commands that can be executed on this Harbor
-     */
-    void setSettings(int port, Set<Person> admins, Set<Person> allowedPeople, Map<Integer, String> commands) {
-        this.port = port;
-        this.admins = new HashSet<Person>(admins);
-        this.allowedPeople = new HashSet<Person>(allowedPeople);
-        this.commands = new HashMap<>(commands);
     }
 
     /**
@@ -101,5 +90,9 @@ class Settings implements Serializable {
      */
     public HashMap<Integer, String> getCommands() {
         return commands;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 }

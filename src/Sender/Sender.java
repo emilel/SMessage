@@ -6,6 +6,7 @@ import Shipments.Response;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class Sender {
     protected Socket socket;
@@ -76,6 +77,9 @@ public class Sender {
             objectOutputStream.writeObject(parcel);
             System.out.println("successfully sent parcel");
             return Response.SUCCESS;
+        } catch (SocketException e) {
+            System.out.println("error sending");
+            return Response.SEND_ERROR;
         } catch (IOException e) {
             System.out.println("unable to send parcel");
             e.printStackTrace();
