@@ -24,6 +24,7 @@ hs_err_pid*
 #IntelliJ Idea files
 **/.idea/workspace.xml
 **/.idea/tasks.xml
+.idea/
 
 #Personal settings file
 .settings
